@@ -8,44 +8,31 @@ import re
 @api_view(['POST'])
 def receive_sms(request):
     """
-    Receives an SMS from the forwarder app and saves the verification code
+    Receives an SMS via POST and stores it in the database.
+    Expects 'national_code' and 'sms_code' in the POST data.
     """
-    serializer = SMSSerializer(data=request.data)
+    national_code = request.data.get('national_code')
+    sms_code = request.data.get('sms_code')
 
-    if serializer.is_valid():
-        # Save the message
-        sms_instance = serializer.save()
+    if not national_code or not sms_code:
+        return Response({'status': 'failed', 'message': 'national_code or sms_code missing'}, status=400)
 
-        # Extract the SMS code from the message (assuming it's a 6-digit code)
-        match = re.search(r'\b\d{6}\b', sms_instance.message)
-        if match:
-            sms_instance.sms_code = match.group(0)
-            sms_instance.save()
-            return Response({
-                'status': 'success',
-                'message': 'SMS code received and saved.',
-                'sms_code': sms_instance.sms_code
-            }, status=status.HTTP_201_CREATED)
-
-        return Response({
-            'status': 'failed',
-            'message': 'No valid SMS code found.'
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # Save the SMS to the database
+    sms = SMS.objects.create(national_code=national_code, sms_code=sms_code)
+    return Response({'status': 'success', 'message': 'SMS received and saved successfully.'})
 
 @api_view(['GET'])
-def get_latest_sms_code(request):
+def get_latest_sms_code(request, national_code):
     """
-    Returns the latest SMS code
+    Returns the latest SMS code for the given national code.
     """
-    sms = SMS.objects.order_by('-received_at').first()
-    if sms and sms.sms_code:
+    sms = SMS.objects.filter(national_code=national_code).order_by('-received_at').first()
+    if sms:
         return Response({
             'status': 'success',
             'sms_code': sms.sms_code
         })
     return Response({
         'status': 'failed',
-        'message': 'No SMS code available.'
+        'message': 'No SMS code available for this national code.'
     }, status=404)
