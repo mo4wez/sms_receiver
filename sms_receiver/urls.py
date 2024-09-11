@@ -1,7 +1,7 @@
 from django.urls import path
-from .views import receive_sms, get_latest_sms_code
+from .views import get_latest_sms_code, receive_sms_code
 
 urlpatterns = [
-    path('receive-sms/', receive_sms, name='receive_sms'),
     path('<str:national_code>/', get_latest_sms_code, name='get_latest_sms_code'),
+    path('receive/<str:national_code>/', receive_sms_code, name='receive_sms_code'),
 ]
