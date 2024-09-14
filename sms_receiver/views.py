@@ -15,7 +15,8 @@ def get_latest_sms_code(request, national_code):
     if sms and sms.sms_code and sms.is_valid():
         return Response({
             'status': 'success',
-            'sms_code': sms.sms_code
+            'sms_code': sms.sms_code,
+            'received_at': sms.received_at
         }, status=200)
     return Response({
         'status': 'failed',
